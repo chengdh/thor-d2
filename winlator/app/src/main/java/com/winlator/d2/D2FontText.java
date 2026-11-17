@@ -13,7 +13,7 @@ package com.winlator.d2;
 final class D2FontText {
 
     static final String MAPPED = "“”„‚‘’–—→←…≡";
-    private static final String[] STAND_IN = {"\"", "\"", "\"", "'", "'", "'", "-", "-", ">", "<", "...", "="};
+    static final String[] STAND_IN = {"\"", "\"", "\"", "'", "'", "'", "-", "-", ">", "<", "...", "="};
 
     private static final String UNKNOWN = "?";
 

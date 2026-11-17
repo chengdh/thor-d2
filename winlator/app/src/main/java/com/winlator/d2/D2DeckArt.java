@@ -24,12 +24,13 @@ final class D2DeckArt {
     private static final String TAG = "ThorD2";
     private static final int ITEM_RECORD = 424, I_INVFILE = 0x20, I_UNIQUE_INVFILE = 0x40, I_SET_INVFILE = 0x60, I_CODE = 0x80;
 
-    /** A bitmap font of the game (DC6 glyphs + TBL widths), tinted per colour. */
+    /** A bitmap font of the game (DC6 glyphs + TBL widths), tinted per colour. CJK uses a system font fallback. */
     static final class Font {
         private final Bitmap[] glyphs;
         private final int[] widths;
         private final int height;
         private final Map<Integer, Paint> paints = new HashMap<>();
+        private final Map<Integer, Paint> cjkPaints = new HashMap<>();
         private final RectF dst = new RectF();
 
         Font(Bitmap[] glyphs, int[] widths) {
@@ -51,28 +52,69 @@ final class D2DeckArt {
             return top < 0 ? b.getHeight() : bottom - top + 1;
         }
 
+        /** Game glyphs cover code points 0..255; anything above (e.g. Chinese) falls back to a system font. */
+        private static boolean gameGlyph(char c) {
+            if (c < 256) return true;
+            int p = D2FontText.MAPPED.indexOf(c);
+            return p >= 0; // typographic substitutes have an ASCII glyph in the game font
+        }
+
+        private static char substitute(char c) {
+            int p = D2FontText.MAPPED.indexOf(c);
+            return p >= 0 ? D2FontText.STAND_IN[p].charAt(0) : c;
+        }
+
+        private Paint cjkPaint(int rgb, float size) {
+            Integer key = rgb ^ (Float.floatToIntBits(size) << 2);
+            Paint p = cjkPaints.get(key);
+            if (p == null) {
+                p = new Paint(Paint.ANTI_ALIAS_FLAG);
+                p.setColor(rgb);
+                p.setTextSize(size);
+                p.setTextAlign(Paint.Align.LEFT);
+                cjkPaints.put(key, p);
+            }
+            return p;
+        }
+
         float width(String text, float size) {
-            String t = D2FontText.map(text);
             float k = size / height, w = 0;
-            for (int i = 0; i < t.length(); i++) w += widths[t.charAt(i) & 0xFF] * k;
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                if (gameGlyph(c)) w += widths[substitute(c) & 0xFF] * k;
+                else {
+                    Paint cp = cjkPaint(0xFF000000, size);
+                    char[] one = {(char) c};
+                    w += cp.measureText(one, 0, 1);
+                }
+            }
             return w;
         }
 
         /** Draws text with its baseline area ending at y (bottom of the glyph cell), size = cell height in pixels. */
         void draw(Canvas c, String text, float x, float y, float size, int rgb, Paint.Align align) {
-            String t = D2FontText.map(text);
             float k = size / height;
             if (align == Paint.Align.CENTER) x -= width(text, size) / 2;
             else if (align == Paint.Align.RIGHT) x -= width(text, size);
             Paint p = paint(rgb);
-            for (int i = 0; i < t.length(); i++) {
-                int ch = t.charAt(i) & 0xFF;
-                Bitmap g = glyphs[ch];
-                if (g != null) {
-                    dst.set(x, y - g.getHeight() * k, x + g.getWidth() * k, y);
-                    c.drawBitmap(g, null, dst, p);
+            Paint cp = cjkPaint(rgb, size);
+            float descent = cp.getFontMetrics().descent;
+            for (int i = 0; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (gameGlyph(ch)) {
+                    int gch = substitute(ch) & 0xFF;
+                    Bitmap g = glyphs[gch];
+                    if (g != null) {
+                        dst.set(x, y - g.getHeight() * k, x + g.getWidth() * k, y);
+                        c.drawBitmap(g, null, dst, p);
+                    }
+                    x += widths[gch] * k;
                 }
-                x += widths[ch] * k;
+                else {
+                    char[] one = {(char) ch};
+                    c.drawText(one, 0, 1, x, y - descent, cp);
+                    x += cp.measureText(one, 0, 1);
+                }
             }
         }
 
