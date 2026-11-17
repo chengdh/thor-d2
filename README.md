@@ -6,6 +6,12 @@ Thor D2 is a fork of [D2Android](https://github.com/N1v0k/D2Android-Releases) 1.
 handhelds such as the AYN Thor. The game runs on the upper screen as a clean picture without touch buttons; the
 lower screen shows a deck with your character, items, skills and quests, live from the game.
 
+> **📌 About this fork (`cjk-font-support` branch):** this branch adds **Chinese (CJK) text support to the deck**.
+> Stock Thor D2 can only draw Latin characters on the lower screen — with a Chinese game, quest/skill/item/area names
+> show up as `?`. Here Latin text keeps the original game font and Chinese falls back to the system CJK font.
+> This is a community modification, **not** an official upstream release. See
+> [Changes in this branch](#changes-in-this-branch-cjk-font-support) below for details and screenshots.
+
 If it works for you, a ⭐ on GitHub helps – and [subscribing on YouTube](https://www.youtube.com/@toravomusic?sub_confirmation=1) helps me bring more ports to the Thor.
 
 > Unofficial fan project, **not affiliated with, endorsed or supported by Blizzard Entertainment**. Diablo is a
@@ -24,6 +30,37 @@ If it works for you, a ⭐ on GitHub helps – and [subscribing on YouTube](http
 Made a video about this? [Open an issue](../../issues/new) and I'll link it here.
 
 **All Thor ports: [toravo.de/en/thor](https://toravo.de/en/thor/)**
+
+## Changes in this branch (`cjk-font-support`)
+
+This branch is a fork of Thor D2 v0.1.7 with one focused change: **the deck can display Chinese text**.
+
+**The problem.** The deck draws its labels with the game's own bitmap font (`data\local\font\latin\*.dc6`), which
+contains only 256 Latin glyphs. `D2FontText.map()` replaced every character above code point 255 with `?`. With a
+Chinese 1.13d game, the app's own UI (buttons, tabs) and the game on the upper screen were fine, but every string
+read from the game — quest names, skill names, item names, area names, NPC text — appeared on the lower screen as
+one `?` per Chinese character. This is not an encoding issue (the mod sends UTF-8 and the app decodes UTF-8); it is a
+font-glyph limitation baked into the original app.
+
+**The fix.** `D2DeckArt.Font` now checks each character: Latin characters (and the typographic substitute glyphs) use
+the original game DC6 font exactly as before, while any character above 255 is rendered with an anti-aliased system
+font `Paint`, falling back to Android's built-in Noto Sans CJK. Width calculation and baseline alignment were adjusted
+so mixed Latin/Chinese strings lay out correctly. `D2FontText.STAND_IN` was made package-visible so the font can reuse
+the existing punctuation substitutions. The app's start/settings screens are untouched (they use a separate 256-glyph
+font and only show Latin text). No game files are modified.
+
+**Verified on an AYN Thor** with a Chinese 1.13d installation — quests, skills and equipment/inventory tabs all render
+real Chinese characters, with no `?`, no overlap, and the upper-screen game unaffected:
+
+| Quests | Skills | Inventory |
+|---|---|---|
+| ![Deck quest tab showing Chinese quest names](docs/screenshots/deck-cjk-quests.png) | ![Deck skills tab showing Chinese skill names](docs/screenshots/deck-cjk-skills.png) | ![Deck inventory tab showing Chinese item names](docs/screenshots/deck-cjk-inventory.png) |
+
+**Build note.** This branch is built by reusing the native libraries and game assets from a stock `0.1.7` APK and
+recompiling only the Java layer, so it is signed with a community key rather than the upstream build key. It is
+therefore installed as a separate, self-signed APK (`ThorD2-0.1.7-CJK.apk`, version `0.1.7-cjk1`) and cannot be
+updated in place by an official release — export your saves first, uninstall, then install. The
+[save export/import procedure](#fresh-installation-without-losing-saved-games-adb) below works unchanged.
 
 ## Quick start
 
