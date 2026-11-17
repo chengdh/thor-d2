@@ -56,6 +56,13 @@ real Chinese characters, with no `?`, no overlap, and the upper-screen game unaf
 |---|---|---|
 | ![Deck quest tab showing Chinese quest names](docs/screenshots/deck-cjk-quests.png) | ![Deck skills tab showing Chinese skill names](docs/screenshots/deck-cjk-skills.png) | ![Deck inventory tab showing Chinese item names](docs/screenshots/deck-cjk-inventory.png) |
 
+**Larger deck text.** This branch also scales the deck text up by 1.25× for readability on the second screen. The game's
+DC6 glyphs and the CJK fallback are both enlarged, and width/alignment follow the same scale. Dense rows that are packed
+into a fixed height — the ten equipment slots — deliberately keep the original size so their labels do not overflow.
+Note this affects the lower-screen deck only; the game on the upper screen is rendered by Diablo II itself, where the
+largest text setting is already the default *Picture size → Large (540 lines)* (a 4:3 resolution in the game's own
+options makes game text bigger still, at the cost of borders).
+
 **Build note.** This branch is built by reusing the native libraries and game assets from a stock `0.1.7` APK and
 recompiling only the Java layer, so it is signed with a community key rather than the upstream build key. It is
 therefore installed as a separate, self-signed APK (`ThorD2-0.1.7-CJK.apk`, version `0.1.7-cjk1`) and cannot be
