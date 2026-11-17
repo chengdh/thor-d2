@@ -403,8 +403,8 @@ public final class D2Deck extends View {
                 fill.setColor(0x40C7B377);
                 c.drawRect(a, fill);
             }
-            body(c, slots[loc], area.left + 268, y, 18, DIM, Paint.Align.LEFT);
-            body(c, it != null ? ellipsize(it.oneLine(), area.right - area.left - 400, 18) : "–", area.left + 368, y, 18,
+            bodyRaw(c, slots[loc], area.left + 268, y, 18, DIM, Paint.Align.LEFT);
+            bodyRaw(c, it != null ? ellipsizeRaw(it.oneLine(), area.right - area.left - 400, 18) : "–", area.left + 368, y, 18,
                 it != null ? qualityColor(it) : DIM, Paint.Align.LEFT);
             hits.add(new Hit(a, () -> { if (it != null && selectedId < 0) hold(it); else onCell(D2DeckData.PAGE_BODY, slotLoc, 0); }, null, true));
             y += rowH;
@@ -1078,6 +1078,13 @@ public final class D2Deck extends View {
         else androidText(c, s, x, y, size, color, align, false);
     }
 
+    // Dense rows packed into a fixed height (e.g. the ten equipment slots): keep the original size so they fit.
+    private void bodyRaw(Canvas c, String s, float x, float y, float size, int color, Paint.Align align) {
+        D2DeckArt a = art;
+        if (a != null) a.body.drawRaw(c, s.replace('·', '-'), x, y + size * 0.15f, size * 0.78f, brighter(color), align);
+        else androidText(c, s, x, y, size, color, align, false);
+    }
+
     // The game's glyphs are not white: tinting multiplies, so lift the colour to keep it as bright as meant.
     private static int brighter(int c) {
         int r = Math.min(255, ((c >> 16) & 255) * 13 / 10 + 40), g = Math.min(255, ((c >> 8) & 255) * 13 / 10 + 40),
@@ -1102,10 +1109,24 @@ public final class D2Deck extends View {
         return text.measureText(s);
     }
 
+    private float widthRaw(String s, float size) {
+        D2DeckArt a = art;
+        if (a != null) return a.body.widthRaw(s, size * 0.78f);
+        text.setTextSize(size);
+        return text.measureText(s);
+    }
+
     private String ellipsize(String s, float maxW, float size) {
         if (width(s, size, false) <= maxW) return s;
         int n = s.length();
         while (n > 1 && width(s.substring(0, n) + "…", size, false) > maxW) n--;
+        return s.substring(0, n) + "…";
+    }
+
+    private String ellipsizeRaw(String s, float maxW, float size) {
+        if (widthRaw(s, size) <= maxW) return s;
+        int n = s.length();
+        while (n > 1 && widthRaw(s.substring(0, n) + "…", size) > maxW) n--;
         return s.substring(0, n) + "…";
     }
 

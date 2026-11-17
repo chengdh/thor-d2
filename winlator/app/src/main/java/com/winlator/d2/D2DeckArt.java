@@ -26,12 +26,19 @@ final class D2DeckArt {
 
     /** A bitmap font of the game (DC6 glyphs + TBL widths), tinted per colour. CJK uses a system font fallback. */
     static final class Font {
+        /** On-screen text scale; > 1 makes the deck text larger. Shared by the game glyphs and the CJK fallback. */
+        static final float TEXT_SCALE = 1.25f;
+
         private final Bitmap[] glyphs;
         private final int[] widths;
         private final int height;
         private final Map<Integer, Paint> paints = new HashMap<>();
         private final Map<Integer, Paint> cjkPaints = new HashMap<>();
         private final RectF dst = new RectF();
+
+        private static float scaled(float size) {
+            return size * TEXT_SCALE;
+        }
 
         Font(Bitmap[] glyphs, int[] widths) {
             this.glyphs = glyphs;
@@ -78,12 +85,21 @@ final class D2DeckArt {
         }
 
         float width(String text, float size) {
-            float k = size / height, w = 0;
+            return width(text, size, scaled(size));
+        }
+
+        /** Width at the original, unscaled size — for dense rows packed into a fixed height. */
+        float widthRaw(String text, float size) {
+            return width(text, size, size);
+        }
+
+        private float width(String text, float size, float s) {
+            float k = s / height, w = 0;
             for (int i = 0; i < text.length(); i++) {
                 char c = text.charAt(i);
                 if (gameGlyph(c)) w += widths[substitute(c) & 0xFF] * k;
                 else {
-                    Paint cp = cjkPaint(0xFF000000, size);
+                    Paint cp = cjkPaint(0xFF000000, s);
                     char[] one = {(char) c};
                     w += cp.measureText(one, 0, 1);
                 }
@@ -93,11 +109,20 @@ final class D2DeckArt {
 
         /** Draws text with its baseline area ending at y (bottom of the glyph cell), size = cell height in pixels. */
         void draw(Canvas c, String text, float x, float y, float size, int rgb, Paint.Align align) {
-            float k = size / height;
-            if (align == Paint.Align.CENTER) x -= width(text, size) / 2;
-            else if (align == Paint.Align.RIGHT) x -= width(text, size);
+            draw(c, text, x, y, size, scaled(size), rgb, align);
+        }
+
+        /** Draws at the original, unscaled size — for dense rows packed into a fixed height. */
+        void drawRaw(Canvas c, String text, float x, float y, float size, int rgb, Paint.Align align) {
+            draw(c, text, x, y, size, size, rgb, align);
+        }
+
+        private void draw(Canvas c, String text, float x, float y, float size, float s, int rgb, Paint.Align align) {
+            float k = s / height;
+            if (align == Paint.Align.CENTER) x -= width(text, size, s) / 2;
+            else if (align == Paint.Align.RIGHT) x -= width(text, size, s);
             Paint p = paint(rgb);
-            Paint cp = cjkPaint(rgb, size);
+            Paint cp = cjkPaint(rgb, s);
             float descent = cp.getFontMetrics().descent;
             for (int i = 0; i < text.length(); i++) {
                 char ch = text.charAt(i);
