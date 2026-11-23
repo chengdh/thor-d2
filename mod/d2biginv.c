@@ -199,7 +199,12 @@ void __cdecl biTableLoaded(BYTE* table) {
     int count = (int) RD32(biCommon, RVA_InvCount);
     LONG language = biLanguage();
     int result = -2;
-    if (biPanelSite && language >= 0 && (language < 6 || language > 9) && biPanelReady())
+    // cjk-biginv: the simplified/traditional Chinese inventory panel has the same
+    // layout and frame geometry as the English one, so the composer works there too.
+    // Previously languages 6..9 (jpn/kor/sin/chi) were all rejected; only Japanese
+    // and Korean really use a different panel, so keep those two excluded.
+    int panelLanguageOk = language >= 0 && language != 6 && language != 7;
+    if (biPanelSite && panelLanguageOk && biPanelReady())
         result = biTableApply(table, count);
     InterlockedExchange(&biBig, result >= 0);
     invGridH = result >= 0 ? BI_ROWS : INV_H;

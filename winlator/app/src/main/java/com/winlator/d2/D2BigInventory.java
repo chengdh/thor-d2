@@ -21,7 +21,9 @@ public final class D2BigInventory {
 
     public static final String FILE = "d2android-biginv";
 
-    static final String[] OWN_PANEL_LANGUAGES = {"jpn", "kor", "sin", "chi"};
+    // cjk-biginv: Chinese (sin/chi) now supported by the adapted panel composer in d2biginv.c.
+    // Japanese and Korean still use their own inventory picture and stay excluded.
+    static final String[] OWN_PANEL_LANGUAGES = {"jpn", "kor"};
 
     private D2BigInventory() {}
 
