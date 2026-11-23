@@ -6,9 +6,13 @@ Thor D2 is a fork of [D2Android](https://github.com/N1v0k/D2Android-Releases) 1.
 handhelds such as the AYN Thor. The game runs on the upper screen as a clean picture without touch buttons; the
 lower screen shows a deck with your character, items, skills and quests, live from the game.
 
-> **📌 About this fork (`cjk-font-support` branch):** this branch adds **Chinese (CJK) text support to the deck**.
+> **📌 About this fork (`cjk-biginv` branch, based on `cjk-font-support`):** this fork adds **Chinese (CJK) text support
+> to the deck** and enables the **10×8 big inventory for Chinese games**.
 > Stock Thor D2 can only draw Latin characters on the lower screen — with a Chinese game, quest/skill/item/area names
 > show up as `?`. Here Latin text keeps the original game font and Chinese falls back to the system CJK font.
+> Stock Thor D2 also refuses the big inventory in Chinese, because its list of "languages with their own inventory
+> picture" lumps Chinese in with Japanese and Korean; the Chinese panel is in fact identical to the English one, so
+> this branch lets Chinese (simplified and traditional) use the 10×8 grid as well.
 > This is a community modification, **not** an official upstream release. See
 > [Changes in this branch](#changes-in-this-branch-cjk-font-support) below for details and screenshots.
 
@@ -63,10 +67,26 @@ Note this affects the lower-screen deck only; the game on the upper screen is re
 largest text setting is already the default *Picture size → Large (540 lines)* (a 4:3 resolution in the game's own
 options makes game text bigger still, at the cost of borders).
 
+**Big inventory for Chinese games (`cjk-biginv` branch).** Upstream Thor D2 has a 10×8 "big inventory", but rejects it
+for the four languages it believes have "their own inventory picture": Japanese, Korean, simplified Chinese (`sin`)
+and traditional Chinese (`chi`). Only Japanese and Korean actually do — the Chinese 1.13d inventory panel has the
+same frame geometry and grid layout as the English one, so the app's own panel composer works there unchanged. This
+branch narrows the exclusion to Japanese and Korean in both places that check it (`D2BigInventory.OWN_PANEL_LANGUAGES`
+in Java and the language gate in `mod/d2biginv.c`) and leaves the panel/grid composition code itself untouched, so the
+save format and the English/German behaviour are identical to upstream.
+
+With this change, a Chinese game can keep **Big inventory (10 × 8)** on: the app no longer refuses to start a character
+whose items sit in rows 5–8, and those rows are visible and usable in game. Verified on an AYN Thor with a Chinese 1.13d
+installation — the 10×8 grid renders correctly on both screens with no item loss:
+
+| Game screen (10×8) | Deck inventory tab |
+|---|---|
+| ![Chinese game screen showing a 10×8 inventory grid](docs/screenshots/deck-cjk-biginv-upper.png) | ![Deck inventory tab showing the same 10×8 grid](docs/screenshots/deck-cjk-biginv-lower.png) |
+
 **Build note.** This branch is built by reusing the native libraries and game assets from a stock `0.1.7` APK and
-recompiling only the Java layer, so it is signed with a community key rather than the upstream build key. It is
-therefore installed as a separate, self-signed APK (`ThorD2-0.1.7-CJK.apk`, version `0.1.7-cjk1`) and cannot be
-updated in place by an official release — export your saves first, uninstall, then install. The
+recompiling the Java layer plus the `d2android-mod.dll` game module, so it is signed with a community key rather than
+the upstream build key. It is therefore installed as a separate, self-signed APK and cannot be updated in place by an
+official release — export your saves first, uninstall, then install. The
 [save export/import procedure](#fresh-installation-without-losing-saved-games-adb) below works unchanged.
 
 ## Quick start
